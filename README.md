@@ -1,11 +1,11 @@
-# Rozliczenie Tras
+# RozliczanieTras
 
 PWA do rozliczania tras kierowcy (TVM Transport / KOBI Transport): kilometry, punkty, przestój, dodatek za tachograf, dodatki, paliwo (oszczędność/przepał wg norm), miesiące z zamykaniem, raporty PDF z kartami drogowymi, synchronizacja telefon ↔ MacBook przez prywatne repo GitHub.
 
-## Pliki (wgraj wszystkie do repo `rozliczenie-tras`, GitHub Pages)
-rozliczenie-tras.html · manifest.json · sw.js · icon-192.png · icon-512.png · icon-maskable-512.png · apple-touch-icon.png · pdf-lib.min.js · fontkit.umd.min.js · archivo-400.ttf · archivo-700.ttf · crimson-400i.ttf · crimson-700i.ttf · pdfjs.min.js · pdfjs.worker.min.js
+## Pliki (wgraj wszystkie do repo `RozliczanieTras`, GitHub Pages)
+RozliczanieTras.html · manifest.json · sw.js · icon-192.png · icon-512.png · icon-maskable-512.png · apple-touch-icon.png · pdf-lib.min.js · fontkit.umd.min.js · archivo-400.ttf · archivo-700.ttf · crimson-400i.ttf · crimson-700i.ttf · pdfjs.min.js · pdfjs.worker.min.js
 
-Adres: `https://LOGIN.github.io/rozliczenie-tras/rozliczenie-tras.html`.
+Adres: `https://LOGIN.github.io/RozliczanieTras/RozliczanieTras.html`.
 
 ## Instalacja
 - iPhone (Safari): Udostępnij → Do ekranu początkowego.
@@ -13,12 +13,12 @@ Adres: `https://LOGIN.github.io/rozliczenie-tras/rozliczenie-tras.html`.
 - Android (Chrome): ⋮ → Zainstaluj aplikację.
 
 ## Aktualizacje
-Podmieniasz `rozliczenie-tras.html` i `sw.js` (numer wersji w Backup na dole).
+Podmieniasz `RozliczanieTras.html` i `sw.js` (numer wersji w Backup na dole).
 
-## Synchronizacja (prywatne repo na dane, np. `rozliczenie-tras-dane`)
+## Synchronizacja (prywatne repo na dane, np. `RozliczanieTras-dane`)
 1. Prywatne repo + „Add a README”.
 2. Fine-grained token: tylko to repo, Contents: Read and write (Metadata: Read-only dodaje się samo).
-3. W aplikacji: Backup → Synchronizacja urządzeń → `login/rozliczenie-tras-dane` + token. Na każdym urządzeniu.
+3. W aplikacji: Backup → Synchronizacja urządzeń → `login/RozliczanieTras-dane` + token. Na każdym urządzeniu.
 Najpierw łączysz urządzenie z aktualnymi danymi.
 
 ## Zasady
