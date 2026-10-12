@@ -9,9 +9,9 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="RozliczanieTras">
-<link rel="apple-touch-icon" href="apple-touch-icon.png?v=1.0.0">
-<link rel="icon" href="icon-192.png?v=1.0.0">
-<link rel="manifest" href="manifest.json?v=1.0.0">
+<link rel="apple-touch-icon" href="apple-touch-icon.png?v=1.0.1">
+<link rel="icon" href="icon-192.png?v=1.0.1">
+<link rel="manifest" href="manifest.json?v=1.0.1">
 <script>
 (function(){var d=document.documentElement,mq=window.matchMedia&&matchMedia('(prefers-color-scheme: light)'),p='auto';
 try{var s=JSON.parse(localStorage.getItem('tachoPay.v1')||'{}');p=(s.settings&&s.settings.theme)||'auto'}catch(e){}
@@ -513,7 +513,7 @@ html[data-theme="light"] #splash{--spBg:#F5F3EC;--spInk:#15201F;--spGreen:#4F6B5
 
 <script>
 'use strict';
-const APP_VER='1.0.0';
+const APP_VER='1.0.1';
 const KEY='tachoPay.v1';
 const RATE0=[
   {from:'2026-01',km:0.61,pt:25,h:12,min:0.2,tacho:75,fuel:4.32,mode:'fixed'},
@@ -1152,6 +1152,7 @@ function emptyCard(){
 const fuelSum=c=>c.fuel.reduce((s,x)=>s+n(x.l),0);
 const dPLs=d=>d?d.slice(8,10)+'.'+d.slice(5,7)+'.'+d.slice(0,4):'';
 const dtPL=v=>v?dPLs(v.slice(0,10))+' '+v.slice(11,16):'';
+const joinDT=(d,t)=>d?d+'T'+(t||''):'';
 function autoDateText(c){const a=(c.depart||'').slice(0,10),b=(c.ret||'').slice(0,10);if(!a)return '';return b&&b!==a?dPLs(a)+' – '+dPLs(b):dPLs(a)}
 function openCard(route){
   const c=route&&route.card?clone(route.card):emptyCard();
@@ -1181,8 +1182,8 @@ function renderCardForm(){
     <div class="fld"><label class="lbl" for="cOdoOut">Stan licznika wyjazd</label>${cardInput('cOdoOut',c.odoOut,'','number','inputmode="numeric"')}</div>
     <div class="fld"><label class="lbl" for="cOdoIn">Stan licznika powrót</label>${cardInput('cOdoIn',c.odoIn,'','number','inputmode="numeric"')}</div>
   </div>
-  <div class="fld"><label class="lbl" for="cDep">Data i godzina wyjazdu z bazy</label>${cardInput('cDep',c.depart,'','datetime-local')}</div>
-  <div class="fld"><label class="lbl" for="cRet">Data i godzina powrotu na bazę</label>${cardInput('cRet',c.ret,'','datetime-local')}</div>
+  <div class="g2"><div class="fld"><label class="lbl" for="cDepD">Data wyjazdu z bazy</label>${cardInput('cDepD',(c.depart||'').slice(0,10),'','date')}</div><div class="fld"><label class="lbl" for="cDepT">Godzina wyjazdu</label>${cardInput('cDepT',(c.depart||'').slice(11,16),'','time')}</div></div>
+  <div class="g2"><div class="fld"><label class="lbl" for="cRetD">Data powrotu na bazę</label>${cardInput('cRetD',(c.ret||'').slice(0,10),'','date')}</div><div class="fld"><label class="lbl" for="cRetT">Godzina powrotu</label>${cardInput('cRetT',(c.ret||'').slice(11,16),'','time')}</div></div>
   ${bar('POSTOJE&nbsp; np. Budapeszt - 5 godz')}
   ${c.stops.map((s0,i)=>{const s=stopObj(s0),d=stopDur(s.from,s.to);return `<div class="srow"><span class="fn">${i+1}.</span><div class="sl1">${cardInput('cStop'+i,s.place,'Miejscowość')}</div><div class="sl2"><label>od</label>${cardInput('cSf'+i,s.from,'','time')}<label>do</label>${cardInput('cSt'+i,s.to,'','time')}<b id="cSd${i}">${d?'= '+d:''}</b></div></div>`}).join('')}
   ${bar('TANKOWANIE')}
@@ -1222,7 +1223,7 @@ function renderCardForm(){
   B.querySelectorAll('input,textarea').forEach(i=>i.addEventListener('input',upd));
   if(cardSt.lastAuto===undefined)cardSt.lastAuto=$('#cDate').value;
   const dt=()=>{readCardForm();const nv=autoDateText(c);const cur=$('#cDate').value;if(!cur||cur===cardSt.lastAuto){$('#cDate').value=nv;c.dateText=nv}cardSt.lastAuto=nv;if(!cardSt.route){const m=ym((c.depart||today()).slice(0,10));if(!isClosed(m))$('#cMonth').innerHTML=monthOpts(m)}};
-  $('#cDep').addEventListener('change',dt);$('#cRet').addEventListener('change',dt);
+  ['#cDepD','#cDepT','#cRetD','#cRetT'].forEach(id=>$(id).addEventListener('change',dt));
   $('#cNr').addEventListener('change',()=>{const nv=normNr($('#cNr').value);if(nv!==$('#cNr').value){$('#cNr').value=nv;toast('Dodano 0 na początku numeru zlecenia')}});
   $('#cReg').addEventListener('change',()=>{const x=carByReg($('#cReg').value);$('#cReg').value=$('#cReg').value.toUpperCase();if(x){$('#cReg').value=x.name;$('#cTyp').value=typLabel(x.type);const lo=lastOdoOf(x.id);if(lo&&!$('#cOdoOut').value)$('#cOdoOut').value=lo}upd()});
   if($('#cFAdd'))$('#cFAdd').onclick=()=>{const h=B.querySelector('[data-fr][hidden]');if(h)h.hidden=false;if(!B.querySelector('[data-fr][hidden]'))$('#cFAdd').remove()};
@@ -1238,7 +1239,7 @@ function renderCardForm(){
 function readCardForm(){
   const c=cardSt.card,v=id=>($('#'+id)||{}).value??'';
   const reg=v('cReg').trim().toUpperCase(),car=carByReg(reg);
-  Object.assign(c,{reg,carId:car?car.id:'',driver:v('cDrv').trim(),nr:normNr(v('cNr')),month:v('cMonth'),typ:v('cTyp').trim(),depart:v('cDep'),ret:v('cRet'),odoOut:v('cOdoOut'),odoIn:v('cOdoIn'),dateText:v('cDate').trim(),
+  Object.assign(c,{reg,carId:car?car.id:'',driver:v('cDrv').trim(),nr:normNr(v('cNr')),month:v('cMonth'),typ:v('cTyp').trim(),depart:joinDT(v('cDepD'),v('cDepT')),ret:joinDT(v('cRetD'),v('cRetT')),odoOut:v('cOdoOut'),odoIn:v('cOdoIn'),dateText:v('cDate').trim(),
     points:v('cPts'),notes:v('cNotes'),wait:v('cWait'),waitH:v('cWh'),waitM:v('cWm')});
   c.stops=c.stops.map((_,i)=>({place:v('cStop'+i).trim(),from:v('cSf'+i),to:v('cSt'+i)}));
   c.fuel=c.fuel.map((_,i)=>{const x={cc:v('cFc'+i),city:v('cFp'+i).trim(),st:v('cFs'+i),odo:v('cFo'+i),l:v('cFl'+i)};x.place=fuelPlace(x);return x});
