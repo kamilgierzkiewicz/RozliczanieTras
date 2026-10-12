@@ -15,10 +15,10 @@ Adres: `https://LOGIN.github.io/rozliczenie-tras/rozliczenie-tras.html`.
 ## Aktualizacje
 Podmieniasz `rozliczenie-tras.html` i `sw.js` (numer wersji w Backup na dole).
 
-## Synchronizacja (prywatne repo na dane, np. `tachopay-dane`)
+## Synchronizacja (prywatne repo na dane, np. `rozliczenie-tras-dane`)
 1. Prywatne repo + „Add a README”.
 2. Fine-grained token: tylko to repo, Contents: Read and write (Metadata: Read-only dodaje się samo).
-3. W aplikacji: Backup → Synchronizacja urządzeń → `login/tachopay-dane` + token. Na każdym urządzeniu.
+3. W aplikacji: Backup → Synchronizacja urządzeń → `login/rozliczenie-tras-dane` + token. Na każdym urządzeniu.
 Najpierw łączysz urządzenie z aktualnymi danymi.
 
 ## Zasady

@@ -9,9 +9,9 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Rozliczenie Tras">
-<link rel="apple-touch-icon" href="apple-touch-icon.png?v=2026-10-12o">
-<link rel="icon" href="icon-192.png?v=2026-10-12o">
-<link rel="manifest" href="manifest.json?v=2026-10-12o">
+<link rel="apple-touch-icon" href="apple-touch-icon.png?v=2026-10-12p">
+<link rel="icon" href="icon-192.png?v=2026-10-12p">
+<link rel="manifest" href="manifest.json?v=2026-10-12p">
 <script>
 (function(){var d=document.documentElement,mq=window.matchMedia&&matchMedia('(prefers-color-scheme: light)'),p='auto';
 try{var s=JSON.parse(localStorage.getItem('tachoPay.v1')||'{}');p=(s.settings&&s.settings.theme)||'auto'}catch(e){}
@@ -363,7 +363,7 @@ html[data-theme="light"] #splash{--spBg:#F5F3EC;--spInk:#15201F;--spGreen:#4F6B5
     <h3><span class="dot" style="background:var(--green)"></span>Synchronizacja urządzeń</h3>
     <div id="syncSetup">
       <p class="hint-inline" style="margin:0 0 10px">Telefon i MacBook dzielą dane przez Twoje <b>prywatne</b> repo na GitHubie. Wpisz te same dane na każdym urządzeniu.</p>
-      <div class="fld"><label class="lbl" for="syncRepoIn">Repo (login/nazwa)</label><input type="text" id="syncRepoIn" placeholder="login/tachopay-dane" autocapitalize="off" autocorrect="off" spellcheck="false"></div>
+      <div class="fld"><label class="lbl" for="syncRepoIn">Repo (login/nazwa)</label><input type="text" id="syncRepoIn" placeholder="login/rozliczenie-tras-dane" autocapitalize="off" autocorrect="off" spellcheck="false"></div>
       <div class="fld"><label class="lbl" for="syncTokenIn">Token GitHub</label><input type="password" id="syncTokenIn" placeholder="github_pat_…" autocapitalize="off" autocorrect="off" spellcheck="false"></div>
       <button class="btn" id="syncConnect">Połącz i synchronizuj</button>
     </div>
@@ -511,7 +511,7 @@ html[data-theme="light"] #splash{--spBg:#F5F3EC;--spInk:#15201F;--spGreen:#4F6B5
 
 <script>
 'use strict';
-const APP_VER='2026-10-12o';
+const APP_VER='2026-10-12p';
 const KEY='tachoPay.v1';
 const RATE0=[
   {from:'2026-01',km:0.61,pt:25,h:12,min:0.2,tacho:75,fuel:4.32,mode:'fixed'},
