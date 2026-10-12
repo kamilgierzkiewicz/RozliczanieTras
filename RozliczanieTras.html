@@ -9,9 +9,9 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="RozliczanieTras">
-<link rel="apple-touch-icon" href="apple-touch-icon.png?v=2026-10-12z">
-<link rel="icon" href="icon-192.png?v=2026-10-12z">
-<link rel="manifest" href="manifest.json?v=2026-10-12z">
+<link rel="apple-touch-icon" href="apple-touch-icon.png?v=1.0.0">
+<link rel="icon" href="icon-192.png?v=1.0.0">
+<link rel="manifest" href="manifest.json?v=1.0.0">
 <script>
 (function(){var d=document.documentElement,mq=window.matchMedia&&matchMedia('(prefers-color-scheme: light)'),p='auto';
 try{var s=JSON.parse(localStorage.getItem('tachoPay.v1')||'{}');p=(s.settings&&s.settings.theme)||'auto'}catch(e){}
@@ -513,7 +513,7 @@ html[data-theme="light"] #splash{--spBg:#F5F3EC;--spInk:#15201F;--spGreen:#4F6B5
 
 <script>
 'use strict';
-const APP_VER='2026-10-12z';
+const APP_VER='1.0.0';
 const KEY='tachoPay.v1';
 const RATE0=[
   {from:'2026-01',km:0.61,pt:25,h:12,min:0.2,tacho:75,fuel:4.32,mode:'fixed'},
@@ -650,7 +650,7 @@ function renderMonth(){
     if(F==='ALL')tags.unshift(firmTag(r.firm));
     if(r.tacho)tags.push('<span class="tag">tacho</span>');
     if(r.extra)tags.push(`<span class="tag a">+${f1(r.extra)} zł</span>`);
-    if(r.card)tags.push(r.cardDraft?'<span class="tag a">📝 karta w trakcie</span>':'<span class="tag g">📝 karta</span>');
+    if(r.card)tags.push(r.cardPending?'<span class="tag a">📝 karta niezatwierdzona</span>':r.cardDraft?'<span class="tag a">📝 karta w trakcie</span>':'<span class="tag g">📝 karta</span>');
     if(r.att&&r.att.length)tags.push(`<span class="tag">📎 ${r.att.length}</span>`);
     return `<button class="ev" data-id="${r.id}">
       <div class="ic"><b>${d.getDate()}</b><small>${MS[d.getMonth()]}</small></div>
@@ -797,7 +797,7 @@ function openRoute(r){
   seg($('#fSeason'),form.season,x=>{form.season=x;autoNorm()});
   $('#fNorm').value=r&&r.norm?r.norm:normFor(form.veh,form.over,form.season);
   document.querySelectorAll('#modal input,#modal select').forEach(i=>i.disabled=ro);
-  {const nc=!(r&&r.card);$('#fFr').disabled=ro||nc;$('#fFb').disabled=ro||nc;$('#fFuelHint').style.display=nc?'':'none'}
+  {const nc=!(r&&r.card&&!r.cardPending);$('#fFr').disabled=ro||nc;$('#fFb').disabled=ro||nc;$('#fFuelHint').style.display=nc?'':'none'}
   document.querySelectorAll('#modal .seg').forEach(s=>s.classList.toggle('dis',ro));
   document.querySelectorAll('#modal .sw').forEach(s=>s.classList.toggle('dis',ro));
   $('#mSave').style.display=ro?'none':'';$('#mCancel').textContent=ro?'Zamknij':'Anuluj';
@@ -884,14 +884,14 @@ $('#mSave').onclick=()=>{
   const r=readForm();
   if(r.odoStart&&r.odoEnd&&r.odoEnd<=r.odoStart){toast('Licznik końcowy musi być większy niż początkowy',1);return}
   if(!r.km&&!(editing&&editing.card)){toast('Podaj kilometry',1);return}
-  if(editing&&editing.card){r.card=clone(editing.card);if(editing.cardAtt)r.cardAtt=editing.cardAtt;if(r.odoStart)r.card.odoOut=String(r.odoStart);if(r.odoEnd)r.card.odoIn=String(r.odoEnd);r.cardDraft=!n(r.card.odoIn)}
+  if(editing&&editing.card){r.card=clone(editing.card);if(editing.cardPending)r.cardPending=true;if(editing.cardAtt)r.cardAtt=editing.cardAtt;if(r.odoStart)r.card.odoOut=String(r.odoStart);if(r.odoEnd)r.card.odoIn=String(r.odoEnd);r.cardDraft=!n(r.card.odoIn)}
   if(isClosed(r.month)){toast('Miesiąc zamknięty',1);return}
   const i=S.routes.findIndex(x=>x.id===r.id);
   if(i>=0)S.routes[i]=r;else S.routes.push(r);
   attRemoved.forEach(id=>attDel(id));attAdded=[];attRemoved=[];
   save();closeRoute();curM=r.month;curY=+r.month.slice(0,4);render();
   toast('Zapisano · '+zl(calc(r).total));
-  if(r.card&&editing&&editing.card&&(r.card.odoOut!==editing.card.odoOut||r.card.odoIn!==editing.card.odoIn))refreshCardPdf(r.id);
+  if(r.card&&!r.cardPending&&editing&&editing.card&&(r.card.odoOut!==editing.card.odoOut||r.card.odoIn!==editing.card.odoIn))refreshCardPdf(r.id);
   if(S.settings.autoExport&&!SY)exportAll(r.month); // ten sam gest — wymóg iOS dla Udostępnij
 };
 $('#mDel').onclick=()=>{if(!editing||isClosed(editing.month))return;if(!confirm('Usunąć tę trasę?'))return;(editing.att||[]).concat(attAdded).forEach(id=>attDel(id));attAdded=[];S.routes=S.routes.filter(x=>x.id!==editing.id);save();closeRoute();render();toast('Usunięto trasę')};
@@ -1210,8 +1210,9 @@ function renderCardForm(){
   </div>
   </div>
   <button class="btn ghost" id="cPrev" style="margin-top:14px">👁 Podgląd karty</button>
+  ${route&&!ro?`<button class="btn ghost" id="cKeep" style="margin-top:10px">💾 Zapisz bez zatwierdzania</button>`:''}
   <div class="mrow" style="margin-top:10px"><button class="btn ghost" id="cCancel">Anuluj</button>${ro?`<button class="btn" id="cSend">Wyślij kartę</button>`:`<button class="btn" id="cSave">Zatwierdź kartę</button>`}</div>
-  ${route&&route.card&&!ro?`<button class="btn ghost" id="cSendOld" style="margin-top:10px">Wyślij ostatnio zapisaną kartę</button>`:''}`;
+  ${route&&route.cardAtt&&!ro?`<button class="btn ghost" id="cSendOld" style="margin-top:10px">Wyślij ostatnio zatwierdzoną kartę</button>`:''}`;
   const B=$('#cardBox');
   seg($('#cFirm'),c.firm,v=>{c.firm=v});
   if(ro){B.querySelectorAll('input,select,textarea').forEach(i=>i.disabled=true);$('#cFirm').classList.add('dis');$('#cSign').classList.add('dis')}
@@ -1227,6 +1228,7 @@ function renderCardForm(){
   if($('#cFAdd'))$('#cFAdd').onclick=()=>{const h=B.querySelector('[data-fr][hidden]');if(h)h.hidden=false;if(!B.querySelector('[data-fr][hidden]'))$('#cFAdd').remove()};
   if($('#cAAdd'))$('#cAAdd').onclick=()=>{const h=B.querySelector('[data-ar][hidden]');if(h)h.hidden=false;if(!B.querySelector('[data-ar][hidden]'))$('#cAAdd').remove()};
   if($('#cSave'))$('#cSave').onclick=saveCard;
+  if($('#cKeep'))$('#cKeep').onclick=saveCardOnly;
   $('#cPrev').onclick=async()=>{const b=$('#cPrev');b.disabled=true;b.textContent='Tworzę podgląd…';
     try{const cc=clone(readCardForm());if(!cc.dateText)cc.dateText=autoDateText(cc);const tmp=routeFromCard(cc,cardSt.route);showPreview(await buildCardPdf(tmp))}catch(e){console.error(e);toast('Podgląd: '+(e.message||e),1)}
     b.disabled=false;b.textContent='👁 Podgląd karty'};
@@ -1272,6 +1274,14 @@ async function refreshCardPdf(id){
   const r=S.routes.find(x=>x.id===id);if(!r||!r.card)return;
   try{const file=await buildCardPdf(r);await storeCardPdf(r,file);save();render();toast('Zaktualizowano kartę drogową')}catch(e){console.error(e);toast('Nie udało się odświeżyć karty: '+(e.message||e),1)}
 }
+function saveCardOnly(){
+  const c=readCardForm(),base=cardSt.route;if(!base)return;
+  if(n(c.odoIn)&&n(c.odoIn)<=n(c.odoOut)){toast('Licznik powrotu musi być większy niż wyjazdu',1);return}
+  const r=S.routes.find(x=>x.id===base.id);if(!r){toast('Nie znaleziono trasy',1);return}
+  if(isClosed(r.month)){toast('Miesiąc zamknięty',1);return}
+  r.card=clone(c);r.cardPending=true;
+  save();closeCard();render();toast('Karta zapisana — niezatwierdzona');
+}
 async function saveCard(){
   const c=readCardForm();
   if(n(c.odoIn)&&n(c.odoIn)<=n(c.odoOut)){toast('Licznik powrotu musi być większy niż wyjazdu',1);return}
@@ -1279,7 +1289,7 @@ async function saveCard(){
   if(isClosed(c.month||ym(c.depart.slice(0,10)))){toast('Ten miesiąc jest zamknięty',1);return}
   if(!c.dateText)c.dateText=autoDateText(c);
   if(c.reg&&!c.carId){const nc={id:'c'+Date.now().toString(36),name:c.reg,type:/12/.test(c.typ)?'12':'10'};S.cars.push(nc);c.carId=nc.id}
-  const base=cardSt.route,r=routeFromCard(c,base);
+  const base=cardSt.route,r=routeFromCard(c,base);delete r.cardPending;
   $('#cSave').disabled=true;$('#cSave').textContent='Tworzę kartę…';
   let file=null;
   try{file=await buildCardPdf(r)}catch(e){console.error(e);toast('Nie udało się utworzyć PDF: '+(e.message||e),1)}
