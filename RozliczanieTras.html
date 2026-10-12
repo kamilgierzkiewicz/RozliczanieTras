@@ -9,9 +9,9 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="RozliczanieTras">
-<link rel="apple-touch-icon" href="apple-touch-icon.png?v=2026-10-12t">
-<link rel="icon" href="icon-192.png?v=2026-10-12t">
-<link rel="manifest" href="manifest.json?v=2026-10-12t">
+<link rel="apple-touch-icon" href="apple-touch-icon.png?v=2026-10-12v">
+<link rel="icon" href="icon-192.png?v=2026-10-12v">
+<link rel="manifest" href="manifest.json?v=2026-10-12v">
 <script>
 (function(){var d=document.documentElement,mq=window.matchMedia&&matchMedia('(prefers-color-scheme: light)'),p='auto';
 try{var s=JSON.parse(localStorage.getItem('tachoPay.v1')||'{}');p=(s.settings&&s.settings.theme)||'auto'}catch(e){}
@@ -140,6 +140,7 @@ table.mt .ok{color:var(--green)}table.mt .bad{color:var(--red)}
 .car .seg{flex:none;width:150px}
 .car button.x{flex:none;width:38px;height:42px;border-radius:8px;border:1px solid var(--line);color:var(--red);font-size:1.1rem}
 /* załączniki */
+.fuRow{display:grid;grid-template-columns:22px minmax(0,1fr) minmax(0,1fr) 34px;gap:8px;align-items:center;margin-bottom:8px}.fuRow .fn{color:var(--mut);font-weight:700;font-size:.85rem;text-align:center}.fuRow input{min-width:0}.fuRow .x{height:42px;border-radius:10px;border:1px solid var(--line);background:var(--panel);color:var(--red);font-size:1rem}.fuHead{display:grid;grid-template-columns:22px minmax(0,1fr) minmax(0,1fr) 34px;gap:8px;margin:2px 0 6px}.fuSum{display:flex;justify-content:space-between;align-items:center;margin:2px 0 12px;font-size:.9rem;color:var(--mut)}.fuSum b{color:var(--ink)}
 .att{display:flex;align-items:center;gap:10px;background:var(--panel2);border:1px solid var(--line2);border-radius:var(--rad);padding:9px 10px;margin-bottom:8px}
 .att .ic{font-size:1.3rem;flex:none}
 .att .nm{flex:1;min-width:0;font-size:.86rem;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -376,7 +377,7 @@ html[data-theme="light"] #splash{--spBg:#F5F3EC;--spInk:#15201F;--spGreen:#4F6B5
   </div>
   <div class="card">
     <h3><span class="dot" style="background:var(--blue)"></span>iCloud</h3>
-    <div class="switch"><div class="txt">Auto-eksport po zapisie trasy<small>Po „Zapisz” otwiera Udostępnij z kopią JSON i CSV miesiąca → <b>Zapisz w Plikach → iCloud Drive</b>.</small></div><div class="sw" id="swAuto"></div></div>
+    <div class="switch"><div class="txt">Auto-eksport po zapisie trasy<small>Po „Zapisz” otwiera Udostępnij z kopią JSON i CSV miesiąca → <b>Zapisz w Plikach → iCloud Drive</b>. Gdy synchronizacja jest połączona, okno się nie pokazuje — dane zapisują się same w prywatnym repo.</small></div><div class="sw" id="swAuto"></div></div>
     <div class="switch" style="margin-top:8px"><div class="txt">Załączniki PDF w kopii<small>Kopia JSON zawiera też pliki PDF tras (większy plik).</small></div><div class="sw" id="swAttBk"></div></div>
     <p class="hint-inline" id="lastExp"></p>
   </div>
@@ -445,12 +446,13 @@ html[data-theme="light"] #splash{--spBg:#F5F3EC;--spInk:#15201F;--spGreen:#4F6B5
   <div class="switch"><div class="txt">Dodatek za tachograf</div><div class="sw on" id="fTacho"></div></div>
 
   <div class="msec">Paliwo</div>
+  <span class="lbl">Tankowania w trasie</span>
+  <div class="fuHead"><span></span><span class="lbl" style="margin:0">Stan licznika</span><span class="lbl" style="margin:0">Litry</span><span></span></div>
+  <div id="fFuels"></div>
+  <button class="btn ghost" id="fFuelAdd" style="margin-bottom:8px">＋ Dodaj tankowanie</button>
+  <div class="fuSum"><span>Razem w trasie</span><b id="fFrSum">0 l</b></div>
   <div class="g2">
-    <div class="fld"><label class="lbl" for="fFr">Tankowania w trasie (l)</label><input type="number" inputmode="decimal" step="0.01" id="fFr" placeholder="0"></div>
     <div class="fld"><label class="lbl" for="fFb">Tankowanie na bazie (l)</label><input type="number" inputmode="decimal" step="0.01" id="fFb" placeholder="0"></div>
-  </div>
-  <div class="g2">
-    <div class="fld"><label class="lbl" for="fFuelOdo">Stan licznika przy tankowaniu</label><input type="number" inputmode="numeric" id="fFuelOdo" placeholder="km"></div>
     <div class="fld"><span class="lbl">Przebieg</span><div class="seg" id="fOver"><button data-v="0">≤ 40k</button><button data-v="1">&gt; 40k</button></div></div>
   </div>
   <div class="g2">
@@ -515,7 +517,7 @@ html[data-theme="light"] #splash{--spBg:#F5F3EC;--spInk:#15201F;--spGreen:#4F6B5
 
 <script>
 'use strict';
-const APP_VER='2026-10-12t';
+const APP_VER='2026-10-12v';
 const KEY='tachoPay.v1';
 const RATE0=[
   {from:'2026-01',km:0.61,pt:25,h:12,min:0.2,tacho:75,fuel:4.32,mode:'fixed'},
@@ -788,7 +790,7 @@ function openRoute(r){
   const v=(id,x)=>$(id).value=x||x===0&&r?x||'':'';
   $('#fKm').value=r&&r.km||'';$('#fPts').value=r&&r.points||'';$('#fExtra').value=r&&r.extra||'';
   $('#fH').value=r&&r.h||'';$('#fMn').value=r&&r.mn||'';setInfo(r&&r.info||'');
-  $('#fFr').value=r&&r.fuelRoute||'';$('#fFuelOdo').value=r&&r.fuelOdo||'';$('#fFb').value=r&&r.fuelBase||'';
+  renderFuels(r?routeFuels(r):[{odo:'',l:''}]);$('#fFb').value=r&&r.fuelBase||'';
   $('#fOdoS').value=r?(r.odoStart||(r.odo&&r.km&&!r.odoEnd?Math.max(0,r.odo-r.km):'')):(form.car&&lastOdoOf(form.car)||'');$('#fOdoE').value=r?(r.odoEnd||r.odo||''):'';
   renderAtt();
   seg($('#fFirm'),formFirm,v=>{formFirm=v;preview()});
@@ -858,13 +860,24 @@ $('#fOdoS').oninput=()=>{odoSTouched=true;odoChanged()};$('#fOdoE').oninput=odoC
 $('#fDate').onchange=()=>{const d=$('#fDate').value;if(!d)return;
   if(!editing||ym(d)!==editing.month){const m=isClosed(ym(d))?$('#fMonth').value:ym(d);$('#fMonth').innerHTML=monthOpts(m)}
   form.season=seasonFor(d);seg($('#fSeason'),form.season,x=>{form.season=x;autoNorm()});if(!normTouched)autoNorm();else preview()};
-['#fKm','#fPts','#fExtra','#fH','#fMn','#fFr','#fFb','#fMonth'].forEach(s=>$(s).addEventListener('input',preview));
+['#fKm','#fPts','#fExtra','#fH','#fMn','#fFb','#fMonth'].forEach(s=>$(s).addEventListener('input',preview));
+const FUEL_MAX=6;
+function routeFuels(r){if(r.fuels&&r.fuels.length)return r.fuels.map(x=>({odo:x.odo||'',l:x.l||''}));return (r.fuelRoute||r.fuelOdo)?[{odo:r.fuelOdo||'',l:r.fuelRoute||''}]:[{odo:'',l:''}]}
+function renderFuels(list){
+  $('#fFuels').innerHTML=list.map((x,i)=>`<div class="fuRow"><span class="fn">${i+1}.</span><input type="number" inputmode="numeric" class="fuO" value="${x.odo??''}" placeholder="km"><input type="number" inputmode="decimal" step="0.01" class="fuL" value="${x.l??''}" placeholder="0"><button class="x" data-fi="${i}" ${ro?'disabled':''} aria-label="Usuń">✕</button></div>`).join('');
+  $('#fFuelAdd').style.display=ro||list.length>=FUEL_MAX?'none':'';fuelSumUpd();
+}
+function readFuels(){return [...document.querySelectorAll('#fFuels .fuRow')].map(e=>({odo:n(e.querySelector('.fuO').value)||null,l:n(e.querySelector('.fuL').value)}))}
+function fuelSumUpd(){$('#fFrSum').textContent=f1(r2(readFuels().reduce((s,x)=>s+x.l,0)))+' l'}
+$('#fFuelAdd').onclick=()=>{const l=readFuels();if(l.length>=FUEL_MAX)return;l.push({odo:'',l:''});renderFuels(l);const ins=document.querySelectorAll('#fFuels .fuO');ins[ins.length-1].focus()};
+$('#fFuels').addEventListener('input',()=>{fuelSumUpd();preview()});
+$('#fFuels').addEventListener('click',e=>{const b=e.target.closest('button[data-fi]');if(!b||ro)return;const l=readFuels();l.splice(+b.dataset.fi,1);renderFuels(l.length?l:[{odo:'',l:''}]);preview()});
 function readForm(){
   return {id:formId,firm:formFirm,att:formAtt.slice(),
     month:$('#fMonth').value,date:$('#fDate').value||today(),
     km:n($('#fKm').value),points:n($('#fPts').value),h:n($('#fH').value),mn:n($('#fMn').value),
     tacho:swOn($('#fTacho')),extra:n($('#fExtra').value),info:infoVal(),
-    fuelRoute:n($('#fFr').value),fuelBase:n($('#fFb').value),fuelOdo:n($('#fFuelOdo').value)||null,odoStart:n($('#fOdoS').value)||null,odoEnd:n($('#fOdoE').value)||null,odo:n($('#fOdoE').value)||n($('#fOdoS').value)||null,
+    ...(()=>{const fu=readFuels().filter(x=>x.l||x.odo);return {fuels:fu,fuelRoute:r2(fu.reduce((s,x)=>s+x.l,0)),fuelOdo:(fu[0]||{}).odo||null}})(),fuelBase:n($('#fFb').value),odoStart:n($('#fOdoS').value)||null,odoEnd:n($('#fOdoE').value)||null,odo:n($('#fOdoE').value)||n($('#fOdoS').value)||null,
     carId:form.car||null,carName:(carById(form.car)||{}).name||'',vehicle:form.veh,over40:form.over,season:form.season,norm:n($('#fNorm').value)||null,normManual:normTouched,
     fuelSettle:swOn($('#fSettle')),...(editing&&editing.rates?{rates:editing.rates}:{})};
 }
@@ -885,15 +898,15 @@ $('#mSave').onclick=()=>{
   const r=readForm();
   if(r.odoStart&&r.odoEnd&&r.odoEnd<=r.odoStart){toast('Licznik końcowy musi być większy niż początkowy',1);return}
   if(!r.km&&!(editing&&editing.card)){toast('Podaj kilometry',1);return}
-  if(editing&&editing.card){r.card=clone(editing.card);if(editing.cardAtt)r.cardAtt=editing.cardAtt;if(r.odoStart)r.card.odoOut=String(r.odoStart);if(r.odoEnd)r.card.odoIn=String(r.odoEnd);if(r.fuelOdo&&r.card.fuel&&r.card.fuel[0])r.card.fuel[0].odo=String(r.fuelOdo);r.cardDraft=!n(r.card.odoIn)}
+  if(editing&&editing.card){r.card=clone(editing.card);if(editing.cardAtt)r.cardAtt=editing.cardAtt;if(r.odoStart)r.card.odoOut=String(r.odoStart);if(r.odoEnd)r.card.odoIn=String(r.odoEnd);r.card.fuel=fuelsToCard(r.fuels,r.card.fuel);r.cardDraft=!n(r.card.odoIn)}
   if(isClosed(r.month)){toast('Miesiąc zamknięty',1);return}
   const i=S.routes.findIndex(x=>x.id===r.id);
   if(i>=0)S.routes[i]=r;else S.routes.push(r);
   attRemoved.forEach(id=>attDel(id));attAdded=[];attRemoved=[];
   save();closeRoute();curM=r.month;curY=+r.month.slice(0,4);render();
   toast('Zapisano · '+zl(calc(r).total));
-  if(r.card&&editing&&editing.card&&(r.card.odoOut!==editing.card.odoOut||r.card.odoIn!==editing.card.odoIn||(r.card.fuel[0]||{}).odo!==(editing.card.fuel[0]||{}).odo))refreshCardPdf(r.id);
-  if(S.settings.autoExport)exportAll(r.month); // ten sam gest — wymóg iOS dla Udostępnij
+  if(r.card&&editing&&editing.card&&(r.card.odoOut!==editing.card.odoOut||r.card.odoIn!==editing.card.odoIn||JSON.stringify(r.card.fuel)!==JSON.stringify(editing.card.fuel)))refreshCardPdf(r.id);
+  if(S.settings.autoExport&&!SY)exportAll(r.month); // ten sam gest — wymóg iOS dla Udostępnij
 };
 $('#mDel').onclick=()=>{if(!editing||isClosed(editing.month))return;if(!confirm('Usunąć tę trasę?'))return;(editing.att||[]).concat(attAdded).forEach(id=>attDel(id));attAdded=[];S.routes=S.routes.filter(x=>x.id!==editing.id);save();closeRoute();render();toast('Usunięto trasę')};
 
@@ -1151,12 +1164,14 @@ function emptyCard(){
     acts:Array.from({length:CARD_ROWS},()=>({desc:'',rep:''})),driver:S.settings.driver||'',points:'',notes:'',wait:'',waitH:'',waitM:'',sign:true,month:''};
 }
 const fuelSum=c=>c.fuel.reduce((s,x)=>s+n(x.l),0);
+function fuelsToCard(list,rows){const used=(rows||[]).filter(x=>n(x.l)||n(x.odo));const out=(list||[]).slice(0,CARD_ROWS).map((f,i)=>{const p=used[i]||{cc:'PL',city:'',st:'',place:''};const x=Object.assign({},p,{odo:f.odo?String(f.odo):'',l:f.l?String(f.l):''});x.place=fuelPlace(x);return x});
+  while(out.length<CARD_ROWS)out.push({cc:'PL',city:'',st:'',place:'',odo:'',l:''});return out}
 const dPLs=d=>d?d.slice(8,10)+'.'+d.slice(5,7)+'.'+d.slice(0,4):'';
 const dtPL=v=>v?dPLs(v.slice(0,10))+' '+v.slice(11,16):'';
 function autoDateText(c){const a=(c.depart||'').slice(0,10),b=(c.ret||'').slice(0,10);if(!a)return '';return b&&b!==a?dPLs(a)+' – '+dPLs(b):dPLs(a)}
 function openCard(route){
   const c=route&&route.card?clone(route.card):emptyCard();
-  if(route&&!route.card){c.firm=route.firm||'TVM';c.carId=route.carId||'';c.reg=route.carName||'';c.points=route.points?String(route.points):'';c.waitH=route.h?String(route.h):'';c.waitM=route.mn?String(route.mn):'';c.depart=route.date+'T06:00';c.base.l=route.fuelBase?String(route.fuelBase):'';c.odoOut=route.odoStart?String(route.odoStart):(route.odo&&route.km?String(route.odo-route.km):'');c.odoIn=route.odoEnd?String(route.odoEnd):(route.odo&&!route.odoStart?String(route.odo):'');if(route.fuelRoute)c.fuel[0].l=String(route.fuelRoute);if(route.fuelOdo)c.fuel[0].odo=String(route.fuelOdo);if(c.carId&&carById(c.carId))c.typ=typLabel(carById(c.carId).type)}
+  if(route&&!route.card){c.firm=route.firm||'TVM';c.carId=route.carId||'';c.reg=route.carName||'';c.points=route.points?String(route.points):'';c.waitH=route.h?String(route.h):'';c.waitM=route.mn?String(route.mn):'';c.depart=route.date+'T06:00';c.base.l=route.fuelBase?String(route.fuelBase):'';c.odoOut=route.odoStart?String(route.odoStart):(route.odo&&route.km?String(route.odo-route.km):'');c.odoIn=route.odoEnd?String(route.odoEnd):(route.odo&&!route.odoStart?String(route.odo):'');c.fuel=fuelsToCard(routeFuels(route).filter(x=>n(x.l)||n(x.odo)),c.fuel);if(c.carId&&carById(c.carId))c.typ=typLabel(carById(c.carId).type)}
   c.month=route?route.month:'';
   cardSt={route:route||null,card:c,ro:!!(route&&isClosed(route.month)),lastAuto:autoDateText(c)};
   renderCardForm();$('#ovlCard').style.display='flex';$('#cardBox').scrollTop=0;
@@ -1255,7 +1270,7 @@ function routeFromCard(c,base){
   const r=Object.assign({},base||{tacho:true,extra:0,fuelSettle:true,att:[]},{
     id:base?base.id:'r'+Date.now().toString(36),firm:c.firm,month:c.month||ym(date),date,
     km:n(c.odoIn)?Math.max(0,n(c.odoIn)-n(c.odoOut)):0,cardDraft:!n(c.odoIn),points:n(c.points),h:n(c.waitH),mn:n(c.waitM),
-    fuelRoute:r2(fuelSum(c)),fuelBase:n(c.base.l),carId:c.carId||null,carName:car?car.name:(c.reg||''),vehicle:veh,over40:over,odo,odoStart:n(c.odoOut)||null,odoEnd:n(c.odoIn)||null,fuelOdo:n((c.fuel[0]||{}).odo)||null,season,
+    fuelRoute:r2(fuelSum(c)),fuelBase:n(c.base.l),carId:c.carId||null,carName:car?car.name:(c.reg||''),vehicle:veh,over40:over,odo,odoStart:n(c.odoOut)||null,odoEnd:n(c.odoIn)||null,fuels:c.fuel.filter(x=>n(x.l)||n(x.odo)).map(x=>({odo:n(x.odo)||null,l:n(x.l)})),fuelOdo:n((c.fuel.find(x=>n(x.l)||n(x.odo))||{}).odo)||null,season,
     info:base&&base.info?base.info:(c.nr?'Zlecenie '+c.nr:''),card:clone(c)});
   if(!base||!base.normManual){r.norm=normFor(veh,over,season);r.normManual=false}
   r.att=(r.att||[]).slice();
