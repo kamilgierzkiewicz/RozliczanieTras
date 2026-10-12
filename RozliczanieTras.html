@@ -9,9 +9,9 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="RozliczanieTras">
-<link rel="apple-touch-icon" href="apple-touch-icon.png?v=2026-10-12r">
-<link rel="icon" href="icon-192.png?v=2026-10-12r">
-<link rel="manifest" href="manifest.json?v=2026-10-12r">
+<link rel="apple-touch-icon" href="apple-touch-icon.png?v=2026-10-12t">
+<link rel="icon" href="icon-192.png?v=2026-10-12t">
+<link rel="manifest" href="manifest.json?v=2026-10-12t">
 <script>
 (function(){var d=document.documentElement,mq=window.matchMedia&&matchMedia('(prefers-color-scheme: light)'),p='auto';
 try{var s=JSON.parse(localStorage.getItem('tachoPay.v1')||'{}');p=(s.settings&&s.settings.theme)||'auto'}catch(e){}
@@ -428,6 +428,10 @@ html[data-theme="light"] #splash{--spBg:#F5F3EC;--spInk:#15201F;--spGreen:#4F6B5
     <div class="fld"><label class="lbl" for="fDate">Data wyjazdu</label><input type="date" id="fDate"></div>
     <div class="fld"><label class="lbl" for="fMonth">Miesiąc rozliczenia</label><select id="fMonth"></select></div>
   </div>
+  <div class="g2">
+    <div class="fld"><label class="lbl" for="fOdoS">Licznik początkowy</label><input type="number" inputmode="numeric" id="fOdoS" placeholder="km"></div>
+    <div class="fld"><label class="lbl" for="fOdoE">Licznik końcowy</label><input type="number" inputmode="numeric" id="fOdoE" placeholder="km"></div>
+  </div>
   <div class="g3">
     <div class="fld"><label class="lbl" for="fKm">Kilometry</label><input type="number" inputmode="numeric" id="fKm" placeholder="0"></div>
     <div class="fld"><label class="lbl" for="fPts">Punkty</label><input type="number" inputmode="decimal" step="0.5" id="fPts" placeholder="0"></div>
@@ -437,7 +441,7 @@ html[data-theme="light"] #splash{--spBg:#F5F3EC;--spInk:#15201F;--spGreen:#4F6B5
     <div class="fld"><label class="lbl" for="fH">Przestój — godz.</label><input type="number" inputmode="numeric" id="fH" placeholder="0"></div>
     <div class="fld"><label class="lbl" for="fMn">Przestój — min</label><input type="number" inputmode="numeric" id="fMn" placeholder="0"></div>
   </div>
-  <div class="fld"><label class="lbl" for="fInfo">Informacje dodatkowe</label><input type="text" id="fInfo" placeholder="np. za co dodatek"></div>
+  <div class="fld"><label class="lbl" for="fInfoSel">Informacje dodatkowe</label><select id="fInfoSel"><option value="">— brak —</option><option>Rozładunek ręczny</option><option>Załadunek ręczny</option><option value="__other">Inne — wpisz…</option></select><input type="text" id="fInfo" placeholder="wpisz informację" style="margin-top:8px;display:none"></div>
   <div class="switch"><div class="txt">Dodatek za tachograf</div><div class="sw on" id="fTacho"></div></div>
 
   <div class="msec">Paliwo</div>
@@ -446,7 +450,7 @@ html[data-theme="light"] #splash{--spBg:#F5F3EC;--spInk:#15201F;--spGreen:#4F6B5
     <div class="fld"><label class="lbl" for="fFb">Tankowanie na bazie (l)</label><input type="number" inputmode="decimal" step="0.01" id="fFb" placeholder="0"></div>
   </div>
   <div class="g2">
-    <div class="fld"><label class="lbl" for="fOdo">Stan licznika (km)</label><input type="number" inputmode="numeric" id="fOdo" placeholder="opcjonalnie"></div>
+    <div class="fld"><label class="lbl" for="fFuelOdo">Stan licznika przy tankowaniu</label><input type="number" inputmode="numeric" id="fFuelOdo" placeholder="km"></div>
     <div class="fld"><span class="lbl">Przebieg</span><div class="seg" id="fOver"><button data-v="0">≤ 40k</button><button data-v="1">&gt; 40k</button></div></div>
   </div>
   <div class="g2">
@@ -511,7 +515,7 @@ html[data-theme="light"] #splash{--spBg:#F5F3EC;--spInk:#15201F;--spGreen:#4F6B5
 
 <script>
 'use strict';
-const APP_VER='2026-10-12r';
+const APP_VER='2026-10-12t';
 const KEY='tachoPay.v1';
 const RATE0=[
   {from:'2026-01',km:0.61,pt:25,h:12,min:0.2,tacho:75,fuel:4.32,mode:'fixed'},
@@ -760,14 +764,14 @@ let tt;function toast(m,err){const t=$('#toast');t.textContent=m;t.classList.tog
 
 /* ---------- modal trasy ---------- */
 let formFirm='TVM',formId='',formAtt=[],attAdded=[],attRemoved=[];
-let editing=null,form={},normTouched=false,ro=false;
+let editing=null,form={},normTouched=false,ro=false,odoSTouched=false;
 function monthOpts(sel,includeClosed){
   const set=new Set([sel,ym(today())]);for(let i=-2;i<=2;i++)set.add(shiftM(sel,i));
   return [...set].filter(k=>includeClosed||!isClosed(k)).sort().map(k=>`<option value="${k}" ${k===sel?'selected':''}>${mLabel(k)}${isClosed(k)?' 🔒':''}</option>`).join('');
 }
 function lastRoute(){return S.routes.slice().sort((a,b)=>(b.date+b.id).localeCompare(a.date+a.id))[0]}
 function openRoute(r){
-  editing=r||null;ro=!!(r&&isClosed(r.month));normTouched=!!(r&&r.normManual);
+  editing=r||null;ro=!!(r&&isClosed(r.month));normTouched=!!(r&&r.normManual);odoSTouched=false;
   formId=r?r.id:('r'+Date.now().toString(36));formFirm=r?(r.firm||'TVM'):(curF()!=='ALL'?curF():(lastRoute()||{}).firm||'TVM');formAtt=r&&r.att?r.att.slice():[];attAdded=[];attRemoved=[];
   const lr=lastRoute();
   const date=r?r.date:today();
@@ -783,9 +787,9 @@ function openRoute(r){
   $('#fMonth').innerHTML=monthOpts(month,ro);
   const v=(id,x)=>$(id).value=x||x===0&&r?x||'':'';
   $('#fKm').value=r&&r.km||'';$('#fPts').value=r&&r.points||'';$('#fExtra').value=r&&r.extra||'';
-  $('#fH').value=r&&r.h||'';$('#fMn').value=r&&r.mn||'';$('#fInfo').value=r&&r.info||'';
-  $('#fFr').value=r&&r.fuelRoute||'';$('#fFb').value=r&&r.fuelBase||'';
-  $('#fOdo').value=r&&r.odo||'';odoHint(r);
+  $('#fH').value=r&&r.h||'';$('#fMn').value=r&&r.mn||'';setInfo(r&&r.info||'');
+  $('#fFr').value=r&&r.fuelRoute||'';$('#fFuelOdo').value=r&&r.fuelOdo||'';$('#fFb').value=r&&r.fuelBase||'';
+  $('#fOdoS').value=r?(r.odoStart||(r.odo&&r.km&&!r.odoEnd?Math.max(0,r.odo-r.km):'')):(form.car&&lastOdoOf(form.car)||'');$('#fOdoE').value=r?(r.odoEnd||r.odo||''):'';
   renderAtt();
   seg($('#fFirm'),formFirm,v=>{formFirm=v;preview()});
   sw($('#fTacho'),r?r.tacho:true,preview);
@@ -807,14 +811,18 @@ function fillCarSel(){
   $('#fCar').innerHTML=`<option value="">— bez wyboru —</option>`+S.cars.map(c=>`<option value="${c.id}" ${c.id===form.car?'selected':''}>${esc(c.name)} · ${c.type} ep</option>`).join('')+(ro?'':`<option value="__new">＋ Dodaj nowe auto…</option>`);
   $('#fCar').value=form.car||'';
 }
-function odoHint(r){const lo=form.car?lastOdoOf(form.car):null;$('#fOdo').placeholder=!r&&lo?'ost. '+lo.toLocaleString('pl-PL'):'opcjonalnie'}
+function odoFill(){if(editing||odoSTouched)return;const lo=form.car?lastOdoOf(form.car):null;$('#fOdoS').value=lo||''}
+const INFO_OPTS=['Rozładunek ręczny','Załadunek ręczny'];
+function setInfo(v){const o=v&&!INFO_OPTS.includes(v);$('#fInfoSel').value=!v?'':o?'__other':v;$('#fInfo').value=o?v:'';$('#fInfo').style.display=o?'':'none'}
+function infoVal(){const s=$('#fInfoSel').value;return s==='__other'?$('#fInfo').value.trim():s}
+$('#fInfoSel').onchange=()=>{const o=$('#fInfoSel').value==='__other';$('#fInfo').style.display=o?'':'none';if(o)$('#fInfo').focus()};
 $('#fCar').onchange=()=>{
   let v=$('#fCar').value;
   if(v==='__new'){const c=newCar();v=c?c.id:form.car;}
   form.car=v;fillCarSel();
   const c=carById(v);
   if(c){form.veh=c.type;seg($('#fVeh'),form.veh,x=>{form.veh=x;autoNorm()});const lo=lastOdoOf(c.id);if(lo){form.over=lo>40000;seg($('#fOver'),form.over?1:0,x=>{form.over=x==='1';autoNorm()})}}
-  odoHint(editing);if(!normTouched)autoNorm();else preview();
+  odoFill();if(!normTouched)autoNorm();else preview();
 };
 function newCar(){
   const name=(prompt('Nazwa auta (np. nr rejestracyjny):')||'').trim();if(!name)return null;
@@ -845,7 +853,8 @@ $('#mX').onclick=cancelRoute;$('#mCancel').onclick=cancelRoute;
 $('#ovl').onclick=e=>{if(e.target.id==='ovl')cancelRoute()};
 function autoNorm(){normTouched=false;$('#fNorm').value=normFor(form.veh,form.over,form.season);preview()}
 $('#fNorm').oninput=()=>{normTouched=true;preview()};
-$('#fOdo').oninput=()=>{const o=n($('#fOdo').value);if(o>0){const ov=o>40000;if(ov!==form.over){form.over=ov;seg($('#fOver'),ov?1:0,x=>{form.over=x==='1';autoNorm()});if(!normTouched)autoNorm()}}};
+function odoChanged(){const a=n($('#fOdoS').value),b=n($('#fOdoE').value);if(a>0&&b>a)$('#fKm').value=b-a;const o=Math.max(a,b);if(o>0){const ov=o>40000;if(ov!==form.over){form.over=ov;seg($('#fOver'),ov?1:0,x=>{form.over=x==='1';autoNorm()});if(!normTouched)autoNorm()}}preview()}
+$('#fOdoS').oninput=()=>{odoSTouched=true;odoChanged()};$('#fOdoE').oninput=odoChanged;
 $('#fDate').onchange=()=>{const d=$('#fDate').value;if(!d)return;
   if(!editing||ym(d)!==editing.month){const m=isClosed(ym(d))?$('#fMonth').value:ym(d);$('#fMonth').innerHTML=monthOpts(m)}
   form.season=seasonFor(d);seg($('#fSeason'),form.season,x=>{form.season=x;autoNorm()});if(!normTouched)autoNorm();else preview()};
@@ -854,8 +863,8 @@ function readForm(){
   return {id:formId,firm:formFirm,att:formAtt.slice(),
     month:$('#fMonth').value,date:$('#fDate').value||today(),
     km:n($('#fKm').value),points:n($('#fPts').value),h:n($('#fH').value),mn:n($('#fMn').value),
-    tacho:swOn($('#fTacho')),extra:n($('#fExtra').value),info:$('#fInfo').value.trim(),
-    fuelRoute:n($('#fFr').value),fuelBase:n($('#fFb').value),odo:n($('#fOdo').value)||null,
+    tacho:swOn($('#fTacho')),extra:n($('#fExtra').value),info:infoVal(),
+    fuelRoute:n($('#fFr').value),fuelBase:n($('#fFb').value),fuelOdo:n($('#fFuelOdo').value)||null,odoStart:n($('#fOdoS').value)||null,odoEnd:n($('#fOdoE').value)||null,odo:n($('#fOdoE').value)||n($('#fOdoS').value)||null,
     carId:form.car||null,carName:(carById(form.car)||{}).name||'',vehicle:form.veh,over40:form.over,season:form.season,norm:n($('#fNorm').value)||null,normManual:normTouched,
     fuelSettle:swOn($('#fSettle')),...(editing&&editing.rates?{rates:editing.rates}:{})};
 }
@@ -874,13 +883,16 @@ function preview(){
 }
 $('#mSave').onclick=()=>{
   const r=readForm();
+  if(r.odoStart&&r.odoEnd&&r.odoEnd<=r.odoStart){toast('Licznik końcowy musi być większy niż początkowy',1);return}
   if(!r.km&&!(editing&&editing.card)){toast('Podaj kilometry',1);return}
+  if(editing&&editing.card){r.card=clone(editing.card);if(editing.cardAtt)r.cardAtt=editing.cardAtt;if(r.odoStart)r.card.odoOut=String(r.odoStart);if(r.odoEnd)r.card.odoIn=String(r.odoEnd);if(r.fuelOdo&&r.card.fuel&&r.card.fuel[0])r.card.fuel[0].odo=String(r.fuelOdo);r.cardDraft=!n(r.card.odoIn)}
   if(isClosed(r.month)){toast('Miesiąc zamknięty',1);return}
   const i=S.routes.findIndex(x=>x.id===r.id);
   if(i>=0)S.routes[i]=r;else S.routes.push(r);
   attRemoved.forEach(id=>attDel(id));attAdded=[];attRemoved=[];
   save();closeRoute();curM=r.month;curY=+r.month.slice(0,4);render();
   toast('Zapisano · '+zl(calc(r).total));
+  if(r.card&&editing&&editing.card&&(r.card.odoOut!==editing.card.odoOut||r.card.odoIn!==editing.card.odoIn||(r.card.fuel[0]||{}).odo!==(editing.card.fuel[0]||{}).odo))refreshCardPdf(r.id);
   if(S.settings.autoExport)exportAll(r.month); // ten sam gest — wymóg iOS dla Udostępnij
 };
 $('#mDel').onclick=()=>{if(!editing||isClosed(editing.month))return;if(!confirm('Usunąć tę trasę?'))return;(editing.att||[]).concat(attAdded).forEach(id=>attDel(id));attAdded=[];S.routes=S.routes.filter(x=>x.id!==editing.id);save();closeRoute();render();toast('Usunięto trasę')};
@@ -1144,7 +1156,7 @@ const dtPL=v=>v?dPLs(v.slice(0,10))+' '+v.slice(11,16):'';
 function autoDateText(c){const a=(c.depart||'').slice(0,10),b=(c.ret||'').slice(0,10);if(!a)return '';return b&&b!==a?dPLs(a)+' – '+dPLs(b):dPLs(a)}
 function openCard(route){
   const c=route&&route.card?clone(route.card):emptyCard();
-  if(route&&!route.card){c.firm=route.firm||'TVM';c.carId=route.carId||'';c.reg=route.carName||'';c.points=route.points?String(route.points):'';c.waitH=route.h?String(route.h):'';c.waitM=route.mn?String(route.mn):'';c.depart=route.date+'T06:00';c.base.l=route.fuelBase?String(route.fuelBase):'';c.odoIn=route.odo?String(route.odo):'';c.odoOut=route.odo&&route.km?String(route.odo-route.km):'';if(route.fuelRoute)c.fuel[0].l=String(route.fuelRoute);if(c.carId&&carById(c.carId))c.typ=typLabel(carById(c.carId).type)}
+  if(route&&!route.card){c.firm=route.firm||'TVM';c.carId=route.carId||'';c.reg=route.carName||'';c.points=route.points?String(route.points):'';c.waitH=route.h?String(route.h):'';c.waitM=route.mn?String(route.mn):'';c.depart=route.date+'T06:00';c.base.l=route.fuelBase?String(route.fuelBase):'';c.odoOut=route.odoStart?String(route.odoStart):(route.odo&&route.km?String(route.odo-route.km):'');c.odoIn=route.odoEnd?String(route.odoEnd):(route.odo&&!route.odoStart?String(route.odo):'');if(route.fuelRoute)c.fuel[0].l=String(route.fuelRoute);if(route.fuelOdo)c.fuel[0].odo=String(route.fuelOdo);if(c.carId&&carById(c.carId))c.typ=typLabel(carById(c.carId).type)}
   c.month=route?route.month:'';
   cardSt={route:route||null,card:c,ro:!!(route&&isClosed(route.month)),lastAuto:autoDateText(c)};
   renderCardForm();$('#ovlCard').style.display='flex';$('#cardBox').scrollTop=0;
@@ -1243,11 +1255,21 @@ function routeFromCard(c,base){
   const r=Object.assign({},base||{tacho:true,extra:0,fuelSettle:true,att:[]},{
     id:base?base.id:'r'+Date.now().toString(36),firm:c.firm,month:c.month||ym(date),date,
     km:n(c.odoIn)?Math.max(0,n(c.odoIn)-n(c.odoOut)):0,cardDraft:!n(c.odoIn),points:n(c.points),h:n(c.waitH),mn:n(c.waitM),
-    fuelRoute:r2(fuelSum(c)),fuelBase:n(c.base.l),carId:c.carId||null,carName:car?car.name:(c.reg||''),vehicle:veh,over40:over,odo,season,
+    fuelRoute:r2(fuelSum(c)),fuelBase:n(c.base.l),carId:c.carId||null,carName:car?car.name:(c.reg||''),vehicle:veh,over40:over,odo,odoStart:n(c.odoOut)||null,odoEnd:n(c.odoIn)||null,fuelOdo:n((c.fuel[0]||{}).odo)||null,season,
     info:base&&base.info?base.info:(c.nr?'Zlecenie '+c.nr:''),card:clone(c)});
   if(!base||!base.normManual){r.norm=normFor(veh,over,season);r.normManual=false}
   r.att=(r.att||[]).slice();
   return r;
+}
+async function storeCardPdf(r,file){
+  if(r.cardAtt){attDel(r.cardAtt);r.att=(r.att||[]).filter(x=>x!==r.cardAtt)}
+  const data=await new Promise(res=>{const fr=new FileReader();fr.onload=()=>res(fr.result);fr.readAsDataURL(file)});
+  const a={id:'a'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),routeId:r.id,name:file.name,type:'application/pdf',size:file.size,data,added:new Date().toISOString()};
+  await attPut(a);r.att=r.att||[];r.att.unshift(a.id);r.cardAtt=a.id;
+}
+async function refreshCardPdf(id){
+  const r=S.routes.find(x=>x.id===id);if(!r||!r.card)return;
+  try{const file=await buildCardPdf(r);await storeCardPdf(r,file);save();render();toast('Zaktualizowano kartę drogową')}catch(e){console.error(e);toast('Nie udało się odświeżyć karty: '+(e.message||e),1)}
 }
 async function saveCard(){
   const c=readCardForm();
@@ -1260,12 +1282,7 @@ async function saveCard(){
   $('#cSave').disabled=true;$('#cSave').textContent='Tworzę kartę…';
   let file=null;
   try{file=await buildCardPdf(r)}catch(e){console.error(e);toast('Nie udało się utworzyć PDF: '+(e.message||e),1)}
-  if(file){
-    if(r.cardAtt){attDel(r.cardAtt);r.att=r.att.filter(x=>x!==r.cardAtt)}
-    const data=await new Promise(res=>{const fr=new FileReader();fr.onload=()=>res(fr.result);fr.readAsDataURL(file)});
-    const a={id:'a'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),routeId:r.id,name:file.name,type:'application/pdf',size:file.size,data,added:new Date().toISOString()};
-    await attPut(a);r.att.unshift(a.id);r.cardAtt=a.id;
-  }
+  if(file)await storeCardPdf(r,file);
   const i=S.routes.findIndex(x=>x.id===r.id);if(i>=0)S.routes[i]=r;else S.routes.push(r);
   save();closeCard();curM=r.month;curY=+r.month.slice(0,4);render();
   toast('Zapisano trasę · '+zl(calc(r).total));
