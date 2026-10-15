@@ -9,9 +9,9 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="RozliczanieTras">
-<link rel="apple-touch-icon" href="apple-touch-icon.png?v=1.0.2">
-<link rel="icon" href="icon-192.png?v=1.0.2">
-<link rel="manifest" href="manifest.json?v=1.0.2">
+<link rel="apple-touch-icon" href="apple-touch-icon.png?v=1.1.0">
+<link rel="icon" href="icon-192.png?v=1.1.0">
+<link rel="manifest" href="manifest.json?v=1.1.0">
 <script>
 (function(){var d=document.documentElement,mq=window.matchMedia&&matchMedia('(prefers-color-scheme: light)'),p='auto';
 try{var s=JSON.parse(localStorage.getItem('tachoPay.v1')||'{}');p=(s.settings&&s.settings.theme)||'auto'}catch(e){}
@@ -513,7 +513,7 @@ html[data-theme="light"] #splash{--spBg:#F5F3EC;--spInk:#15201F;--spGreen:#4F6B5
 
 <script>
 'use strict';
-const APP_VER='1.0.2';
+const APP_VER='1.1.0';
 const KEY='tachoPay.v1';
 const RATE0=[
   {from:'2026-01',km:0.61,pt:25,h:12,min:0.2,tacho:75,fuel:4.32,mode:'fixed'},
@@ -797,7 +797,7 @@ function openRoute(r){
   seg($('#fSeason'),form.season,x=>{form.season=x;autoNorm()});
   $('#fNorm').value=r&&r.norm?r.norm:normFor(form.veh,form.over,form.season);
   document.querySelectorAll('#modal input,#modal select').forEach(i=>i.disabled=ro);
-  {const nc=!(r&&r.card&&!r.cardPending);$('#fFr').disabled=ro||nc;$('#fFb').disabled=ro||nc;$('#fFuelHint').style.display=nc?'':'none'}
+  {const hc=!!(r&&r.card);$('#fFr').disabled=true;$('#fFb').disabled=true;$('#fKm').disabled=ro||hc;$('#fH').disabled=ro||hc;$('#fMn').disabled=ro||hc;$('#fFuelHint').textContent=hc?'Litry z karty drogowej (tankowania 1–6 i baza poz. 7) — zmieniasz je w karcie.':'Litry uzupełnią się z karty drogowej: tankowania 1–6 i baza (poz. 7).'}
   document.querySelectorAll('#modal .seg').forEach(s=>s.classList.toggle('dis',ro));
   document.querySelectorAll('#modal .sw').forEach(s=>s.classList.toggle('dis',ro));
   $('#mSave').style.display=ro?'none':'';$('#mCancel').textContent=ro?'Zamknij':'Anuluj';
@@ -884,14 +884,14 @@ $('#mSave').onclick=()=>{
   const r=readForm();
   if(r.odoStart&&r.odoEnd&&r.odoEnd<=r.odoStart){toast('Licznik końcowy musi być większy niż początkowy',1);return}
   if(!r.km&&!(editing&&editing.card)){toast('Podaj kilometry',1);return}
-  if(editing&&editing.card){r.card=clone(editing.card);if(editing.cardPending)r.cardPending=true;if(editing.cardAtt)r.cardAtt=editing.cardAtt;if(r.odoStart)r.card.odoOut=String(r.odoStart);if(r.odoEnd)r.card.odoIn=String(r.odoEnd);r.cardDraft=!n(r.card.odoIn)}
+  if(editing&&editing.card){r.card=syncCardFromRoute(r,editing.card);if(editing.cardPending)r.cardPending=true;if(editing.cardAtt)r.cardAtt=editing.cardAtt;r.fuelRoute=editing.fuelRoute||0;r.fuelBase=editing.fuelBase||0;r.h=editing.h||0;r.mn=editing.mn||0;r.km=r.odoEnd?Math.max(0,r.odoEnd-(r.odoStart||0)):0;r.cardDraft=!n(r.card.odoIn)}
   if(isClosed(r.month)){toast('Miesiąc zamknięty',1);return}
   const i=S.routes.findIndex(x=>x.id===r.id);
   if(i>=0)S.routes[i]=r;else S.routes.push(r);
   attRemoved.forEach(id=>attDel(id));attAdded=[];attRemoved=[];
   save();closeRoute();curM=r.month;curY=+r.month.slice(0,4);render();
   toast('Zapisano · '+zl(calc(r).total));
-  if(r.card&&!r.cardPending&&editing&&editing.card&&(r.card.odoOut!==editing.card.odoOut||r.card.odoIn!==editing.card.odoIn))refreshCardPdf(r.id);
+  if(r.card&&!r.cardPending&&r.cardAtt&&editing&&editing.card&&JSON.stringify(r.card)!==JSON.stringify(editing.card))refreshCardPdf(r.id);
   if(S.settings.autoExport&&!SY)exportAll(r.month); // ten sam gest — wymóg iOS dla Udostępnij
 };
 $('#mDel').onclick=()=>{if(!editing||isClosed(editing.month))return;if(!confirm('Usunąć tę trasę?'))return;(editing.att||[]).concat(attAdded).forEach(id=>attDel(id));attAdded=[];S.routes=S.routes.filter(x=>x.id!==editing.id);save();closeRoute();render();toast('Usunięto trasę')};
@@ -1136,6 +1136,8 @@ const CARD_ROWS=6;
 const FCC=['PL','CZ','SK','DE'],FST=['MOYA','EW','VISA'];
 const stopObj=x=>typeof x==='string'?{place:x,from:'',to:''}:(x||{place:'',from:'',to:''});
 function stopDur(a,b){if(!/^\d\d:\d\d$/.test(a||'')||!/^\d\d:\d\d$/.test(b||''))return '';let m=(+b.slice(0,2)*60+ +b.slice(3))-(+a.slice(0,2)*60+ +a.slice(3));if(m<=0)m+=1440;return Math.floor(m/60)+':'+String(m%60).padStart(2,'0')}
+function stopsMin(c){return (c.stops||[]).reduce((t,x0)=>{const x=stopObj(x0),d=stopDur(x.from,x.to);if(!d)return t;const [h,m]=d.split(':');return t+(+h)*60+(+m)},0)}
+const hmTxt=m=>Math.floor(m/60)+' h '+String(m%60).padStart(2,'0')+' min';
 function stopText(x){x=stopObj(x);const d=stopDur(x.from,x.to);if(!x.place&&!x.from&&!x.to)return '';return [x.place,x.from&&x.to?x.from+' - '+x.to+' = '+d:(x.from||x.to)].filter(Boolean).join(' - ')}
 const fuelPlace=x=>(x.city||x.st)?[x.cc,x.city,x.st].filter(Boolean).join(' - '):(x.place||'');
 const selOpts=(arr,val,empty)=>`<option value="">${empty}</option>`+arr.map(o=>`<option ${o===val?'selected':''}>${o}</option>`).join('');
@@ -1154,10 +1156,19 @@ const dPLs=d=>d?d.slice(8,10)+'.'+d.slice(5,7)+'.'+d.slice(0,4):'';
 const dtPL=v=>v?dPLs(v.slice(0,10))+' '+v.slice(11,16):'';
 const joinDT=(d,t)=>d?d+'T'+(t||''):'';
 function autoDateText(c){const a=(c.depart||'').slice(0,10),b=(c.ret||'').slice(0,10);if(!a)return '';return b&&b!==a?dPLs(a)+' – '+dPLs(b):dPLs(a)}
+function syncCardFromRoute(r,old){
+  const c=clone(old);c.firm=r.firm||c.firm;
+  const car=r.carId&&carById(r.carId);if(car){c.carId=car.id;c.reg=car.name;c.typ=typLabel(car.type)}
+  if(r.date&&(old.depart||'').slice(0,10)!==r.date)c.depart=r.date+'T'+((old.depart||'').slice(11,16)||'06:00');
+  c.odoOut=r.odoStart?String(r.odoStart):'';c.odoIn=r.odoEnd?String(r.odoEnd):'';
+  c.points=r.points?String(r.points):'';c.month=r.month;
+  if((old.dateText||'')===autoDateText(old))c.dateText=autoDateText(c);
+  return c;
+}
 function openCard(route){
-  const c=route&&route.card?clone(route.card):emptyCard();
+  const c=route&&route.card?syncCardFromRoute(route,route.card):emptyCard();
   if(route&&!route.card){c.firm=route.firm||'TVM';c.carId=route.carId||'';c.reg=route.carName||'';c.points=route.points?String(route.points):'';c.waitH=route.h?String(route.h):'';c.waitM=route.mn?String(route.mn):'';c.depart=route.date+'T06:00';c.odoOut=route.odoStart?String(route.odoStart):(route.odo&&route.km?String(route.odo-route.km):'');c.odoIn=route.odoEnd?String(route.odoEnd):(route.odo&&!route.odoStart?String(route.odo):'');if(c.carId&&carById(c.carId))c.typ=typLabel(carById(c.carId).type)}
-  c.month=route?route.month:'';if(route){c.waitH=route.h?String(route.h):'';c.waitM=route.mn?String(route.mn):''}
+  c.month=route?route.month:'';
   cardSt={route:route||null,card:c,ro:!!(route&&isClosed(route.month)),lastAuto:autoDateText(c)};
   renderCardForm();$('#ovlCard').style.display='flex';$('#cardBox').scrollTop=0;
 }
@@ -1186,6 +1197,7 @@ function renderCardForm(){
   <div class="g2"><div class="fld"><label class="lbl" for="cRetD">Data powrotu na bazę</label>${cardInput('cRetD',(c.ret||'').slice(0,10),'','date')}</div><div class="fld"><label class="lbl" for="cRetT">Godzina powrotu</label>${cardInput('cRetT',(c.ret||'').slice(11,16),'','time')}</div></div>
   ${bar('POSTOJE&nbsp; np. Budapeszt - 5 godz')}
   ${c.stops.map((s0,i)=>{const s=stopObj(s0),d=stopDur(s.from,s.to);return `<div class="srow"><span class="fn">${i+1}.</span><div class="sl1">${cardInput('cStop'+i,s.place,'Miejscowość')}</div><div class="sl2"><label>od</label>${cardInput('cSf'+i,s.from,'','time')}<label>do</label>${cardInput('cSt'+i,s.to,'','time')}<b id="cSd${i}">${d?'= '+d:''}</b></div></div>`}).join('')}
+  <p class="hint-inline" style="margin:2px 0 12px">Razem postoje → przestój w trasie: <b id="cStopSum">${hmTxt(stopsMin(c))}</b> <small>(nie drukuje się)</small></p>
   ${bar('TANKOWANIE')}
   ${c.fuel.map((x,i)=>`<div class="frow" data-fr="${i}"><span class="fn">${i+1}.</span>
     <div class="fl1"><select id="cFc${i}" aria-label="Kraj">${selOpts(FCC,x.cc??'PL','—')}</select>${cardInput('cFp'+i,x.city??x.place,'Miejscowość')}<select id="cFs${i}" aria-label="Stacja">${selOpts(FST,x.st||'','stacja')}</select></div>
@@ -1219,7 +1231,7 @@ function renderCardForm(){
   if(ro){B.querySelectorAll('input,select,textarea').forEach(i=>i.disabled=true);$('#cFirm').classList.add('dis');$('#cSign').classList.add('dis')}
   sw($('#cSign'),c.sign&&!!S.settings.sign,v=>{c.sign=v});
   $('#cX').onclick=$('#cCancel').onclick=closeCard;
-  const upd=()=>{readCardForm();const k=n(c.odoIn)-n(c.odoOut);$('#cKm').textContent=n(c.odoIn)&&k>0?k.toLocaleString('pl-PL'):'—';$('#cFsum').textContent=f1(r2(fuelSum(c)));c.stops.forEach((x,i)=>{const d=stopDur(x.from,x.to);const e=$('#cSd'+i);if(e)e.textContent=d?'= '+d:''})};
+  const upd=()=>{readCardForm();const k=n(c.odoIn)-n(c.odoOut);$('#cKm').textContent=n(c.odoIn)&&k>0?k.toLocaleString('pl-PL'):'—';$('#cFsum').textContent=f1(r2(fuelSum(c)));c.stops.forEach((x,i)=>{const d=stopDur(x.from,x.to);const e=$('#cSd'+i);if(e)e.textContent=d?'= '+d:''});const ss=$('#cStopSum');if(ss)ss.textContent=hmTxt(stopsMin(c))};
   B.querySelectorAll('input,textarea').forEach(i=>i.addEventListener('input',upd));
   if(cardSt.lastAuto===undefined)cardSt.lastAuto=$('#cDate').value;
   const dt=()=>{readCardForm();const nv=autoDateText(c);const cur=$('#cDate').value;if(!cur||cur===cardSt.lastAuto){$('#cDate').value=nv;c.dateText=nv}cardSt.lastAuto=nv;if(!cardSt.route){const m=ym((c.depart||today()).slice(0,10));if(!isClosed(m))$('#cMonth').innerHTML=monthOpts(m)}};
@@ -1258,7 +1270,7 @@ function routeFromCard(c,base){
   const date=(c.depart||'').slice(0,10)||today(),season=seasonFor(date);
   const r=Object.assign({},base||{tacho:true,extra:0,fuelSettle:true,att:[]},{
     id:base?base.id:'r'+Date.now().toString(36),firm:c.firm,month:c.month||ym(date),date,
-    km:n(c.odoIn)?Math.max(0,n(c.odoIn)-n(c.odoOut)):0,cardDraft:!n(c.odoIn),points:n(c.points),h:n(c.waitH),mn:n(c.waitM),
+    km:n(c.odoIn)?Math.max(0,n(c.odoIn)-n(c.odoOut)):0,cardDraft:!n(c.odoIn),points:n(c.points),h:Math.floor(stopsMin(c)/60),mn:stopsMin(c)%60,
     fuelRoute:r2(fuelSum(c)),fuelBase:n(c.base.l),carId:c.carId||null,carName:car?car.name:(c.reg||''),vehicle:veh,over40:over,odo,odoStart:n(c.odoOut)||null,odoEnd:n(c.odoIn)||null,season,
     info:base&&base.info?base.info:(c.nr?'Zlecenie '+c.nr:''),card:clone(c)});
   if(!base||!base.normManual){r.norm=normFor(veh,over,season);r.normManual=false}
@@ -1278,10 +1290,14 @@ async function refreshCardPdf(id){
 function saveCardOnly(){
   const c=readCardForm(),base=cardSt.route;if(!base)return;
   if(n(c.odoIn)&&n(c.odoIn)<=n(c.odoOut)){toast('Licznik powrotu musi być większy niż wyjazdu',1);return}
-  const r=S.routes.find(x=>x.id===base.id);if(!r){toast('Nie znaleziono trasy',1);return}
-  if(isClosed(r.month)){toast('Miesiąc zamknięty',1);return}
-  r.card=clone(c);r.cardPending=true;
-  save();closeCard();render();toast('Karta zapisana — niezatwierdzona');
+  if(!c.depart){toast('Podaj datę wyjazdu z bazy',1);return}
+  const cur=S.routes.find(x=>x.id===base.id);if(!cur){toast('Nie znaleziono trasy',1);return}
+  if(isClosed(cur.month)||isClosed(c.month||cur.month)){toast('Miesiąc zamknięty',1);return}
+  if(!c.dateText)c.dateText=autoDateText(c);
+  if(c.reg&&!c.carId){const nc={id:'c'+Date.now().toString(36),name:c.reg,type:/12/.test(c.typ)?'12':'10'};S.cars.push(nc);c.carId=nc.id}
+  const r=routeFromCard(c,cur);r.cardPending=true;
+  const i=S.routes.findIndex(x=>x.id===r.id);if(i>=0)S.routes[i]=r;
+  save();closeCard();curM=r.month;curY=+r.month.slice(0,4);render();toast('Karta zapisana (niezatwierdzona) · trasa zaktualizowana');
 }
 async function saveCard(){
   const c=readCardForm();
