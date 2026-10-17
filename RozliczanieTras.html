@@ -9,9 +9,9 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="RozliczanieTras">
-<link rel="apple-touch-icon" href="apple-touch-icon.png?v=1.1.0">
-<link rel="icon" href="icon-192.png?v=1.1.0">
-<link rel="manifest" href="manifest.json?v=1.1.0">
+<link rel="apple-touch-icon" href="apple-touch-icon.png?v=1.2.0">
+<link rel="icon" href="icon-192.png?v=1.2.0">
+<link rel="manifest" href="manifest.json?v=1.2.0">
 <script>
 (function(){var d=document.documentElement,mq=window.matchMedia&&matchMedia('(prefers-color-scheme: light)'),p='auto';
 try{var s=JSON.parse(localStorage.getItem('tachoPay.v1')||'{}');p=(s.settings&&s.settings.theme)||'auto'}catch(e){}
@@ -513,7 +513,7 @@ html[data-theme="light"] #splash{--spBg:#F5F3EC;--spInk:#15201F;--spGreen:#4F6B5
 
 <script>
 'use strict';
-const APP_VER='1.1.0';
+const APP_VER='1.2.0';
 const KEY='tachoPay.v1';
 const RATE0=[
   {from:'2026-01',km:0.61,pt:25,h:12,min:0.2,tacho:75,fuel:4.32,mode:'fixed'},
@@ -1160,7 +1160,7 @@ function syncCardFromRoute(r,old){
   const c=clone(old);c.firm=r.firm||c.firm;
   const car=r.carId&&carById(r.carId);if(car){c.carId=car.id;c.reg=car.name;c.typ=typLabel(car.type)}
   if(r.date&&(old.depart||'').slice(0,10)!==r.date)c.depart=r.date+'T'+((old.depart||'').slice(11,16)||'06:00');
-  c.odoOut=r.odoStart?String(r.odoStart):'';c.odoIn=r.odoEnd?String(r.odoEnd):'';
+  c.odoOut=r.odoStart?String(r.odoStart):'';c.odoIn=r.odoEnd?String(r.odoEnd):'';if(!c.baseOdoManual&&c.odoIn)c.base.odo=c.odoIn;
   c.points=r.points?String(r.points):'';c.month=r.month;
   if((old.dateText||'')===autoDateText(old))c.dateText=autoDateText(c);
   return c;
@@ -1175,6 +1175,7 @@ function openCard(route){
 function cardInput(id,val,ph,type,extra){return `<input type="${type||'text'}" id="${id}" value="${esc(val??'')}" ${ph?`placeholder="${esc(ph)}"`:''} ${extra||''}>`}
 function renderCardForm(){
   const {card:c,ro,route}=cardSt;
+  if(!c.baseOdoManual&&c.odoIn)c.base.odo=c.odoIn;
   const month=c.month||ym((c.depart||today()).slice(0,10));
   const km=n(c.odoIn)-n(c.odoOut);
   const bar=t=>`<div class="cbar">${t}</div>`;
@@ -1233,6 +1234,8 @@ function renderCardForm(){
   $('#cX').onclick=$('#cCancel').onclick=closeCard;
   const upd=()=>{readCardForm();const k=n(c.odoIn)-n(c.odoOut);$('#cKm').textContent=n(c.odoIn)&&k>0?k.toLocaleString('pl-PL'):'—';$('#cFsum').textContent=f1(r2(fuelSum(c)));c.stops.forEach((x,i)=>{const d=stopDur(x.from,x.to);const e=$('#cSd'+i);if(e)e.textContent=d?'= '+d:''});const ss=$('#cStopSum');if(ss)ss.textContent=hmTxt(stopsMin(c))};
   B.querySelectorAll('input,textarea').forEach(i=>i.addEventListener('input',upd));
+  $('#cOdoIn').addEventListener('input',()=>{if(!c.baseOdoManual){$('#cBo').value=$('#cOdoIn').value;c.base.odo=$('#cOdoIn').value}});
+  $('#cBo').addEventListener('input',()=>{const v=$('#cBo').value;c.baseOdoManual=!!v&&v!==$('#cOdoIn').value});
   if(cardSt.lastAuto===undefined)cardSt.lastAuto=$('#cDate').value;
   const dt=()=>{readCardForm();const nv=autoDateText(c);const cur=$('#cDate').value;if(!cur||cur===cardSt.lastAuto){$('#cDate').value=nv;c.dateText=nv}cardSt.lastAuto=nv;if(!cardSt.route){const m=ym((c.depart||today()).slice(0,10));if(!isClosed(m))$('#cMonth').innerHTML=monthOpts(m)}};
   ['#cDepD','#cDepT','#cRetD','#cRetT'].forEach(id=>$(id).addEventListener('change',dt));
